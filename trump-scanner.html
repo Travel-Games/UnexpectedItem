@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Trump Card Scanner</title>
+  <script src="https://unpkg.com/@ericblade/quagga2@1.2.6/dist/quagga.min.js"></script>
+  <style>
+    body {
+      font-family: sans-serif;
+      text-align: center;
+      padding: 20px;
+    }
+
+    #result {
+      margin-top: 20px;
+    }
+
+    #trump {
+      font-size: 60px;
+      color: red;
+      font-weight: bold;
+      margin-top: 10px;
+    }
+
+    #scanner {
+      width: 100%;
+      max-width: 500px;
+      margin: auto;
+      margin-top: 20px;
+      border: 2px solid #ccc;
+    }
+
+    video {
+      width: 100% !important;
+      height: auto !important;
+    }
+  </style>
+</head>
+<body>
+  <h1>Trump Card Scanner</h1>
+  <p>Scan a barcode using your camera</p>
+  <div id="scanner"></div>
+  <div id="result"></div>
+
+  <script>
+    const suits = ["Spades", "Hearts", "Diamonds", "Clubs"];
+    const cards = [];
+
+    for (let s = 0; s < 4; s++) {
+      for (let r = 0; r < 13; r++) {
+        cards.push({
+          suit: suits[s],
+          rank: r,
+          barcode: `${s}${r.toString().padStart(2, '0')}`
+        });
+      }
+    }
+
+    function getRandomCards(deck, count = 10) {
+      const shuffled = [...deck].sort(() => 0.5 - Math.random());
+      return shuffled.slice(0, count);
+    }
+
+    const selectedCards = getRandomCards(cards);
+    console.log("Selected Trump Cards:", selectedCards);
+
+    const seenBarcodes = new Set();
+
+    function handleBarcode(barcode) {
+      if (seenBarcodes.has(barcode)) return;
+      seenBarcodes.add(barcode);
+
+      const match = selectedCards.find(card => card.barcode === barcode);
+      const resultDiv = document.getElementById('result');
+
+      if (match) {
+        resultDiv.innerHTML = `
+          <h2>${match.suit} ${match.rank}</h2>
+          <div id="trump">TRUMP</div>
+        `;
+      } else {
+        resultDiv.innerHTML = `<p>No match: ${barcode}</p>`;
+      }
+    }
+
+    Quagga.init({
+      inputStream: {
+        type: "LiveStream",
+        target: document.querySelector('#scanner'),
+        constraints: {
+          facingMode: "environment" // Rear camera if available
+        }
+      },
+      decoder: {
+        readers: ["code_128_reader", "ean_reader", "ean_8_reader"] // You can adjust based on your barcode type
+      },
+    }, function (err) {
+      if (err) {
+        console.error(err);
+        alert("Error initializing barcode scanner.");
+        return;
+      }
+      Quagga.start();
+    });
+
+    Quagga.onDetected((data) => {
+      const barcode = data.codeResult.code.trim();
+      console.log("Scanned:", barcode);
+      handleBarcode(barcode);
+    });
+  </script>
+</body>
+</html>
