@@ -61,8 +61,8 @@
       return shuffled.slice(0, count);
     }
 
-    const selectedCards = getRandomCards(cards);
-    console.log("Selected Trump Cards:", selectedCards);
+    const selectedTrumpCards = getRandomCards(cards);
+    console.log("Selected TRUMP Cards:", selectedTrumpCards.map(c => c.barcode));
 
     const seenBarcodes = new Set();
 
@@ -70,16 +70,17 @@
       if (seenBarcodes.has(barcode)) return;
       seenBarcodes.add(barcode);
 
-      const match = selectedCards.find(card => card.barcode === barcode);
+      const fullMatch = cards.find(card => card.barcode === barcode);
+      const isTrump = selectedTrumpCards.some(card => card.barcode === barcode);
       const resultDiv = document.getElementById('result');
 
-      if (match) {
+      if (fullMatch) {
         resultDiv.innerHTML = `
-          <h2>${match.suit} ${match.rank}</h2>
-          <div id="trump">TRUMP</div>
+          <h2>${fullMatch.suit} ${fullMatch.rank}</h2>
+          ${isTrump ? '<div id="trump">TRUMP</div>' : ''}
         `;
       } else {
-        resultDiv.innerHTML = `<p>No match: ${barcode}</p>`;
+        resultDiv.innerHTML = `<p>Invalid barcode: ${barcode}</p>`;
       }
     }
 
@@ -88,12 +89,12 @@
         type: "LiveStream",
         target: document.querySelector('#scanner'),
         constraints: {
-          facingMode: "environment" // Rear camera if available
+          facingMode: "environment" // Rear camera
         }
       },
       decoder: {
-        readers: ["code_128_reader", "ean_reader", "ean_8_reader"] // You can adjust based on your barcode type
-      },
+        readers: ["code_128_reader"]
+      }
     }, function (err) {
       if (err) {
         console.error(err);
