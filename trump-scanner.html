@@ -7,8 +7,20 @@
   <style>
     body {
       font-family: sans-serif;
-      text-align: center;
       padding: 20px;
+      text-align: center;
+    }
+
+    #scanner {
+      width: 100%;
+      max-width: 500px;
+      margin: 20px auto;
+      border: 2px solid #ccc;
+    }
+
+    video {
+      width: 100% !important;
+      height: auto !important;
     }
 
     #result {
@@ -22,40 +34,40 @@
       margin-top: 10px;
     }
 
-    #scanner {
-      width: 100%;
-      max-width: 500px;
-      margin: auto;
-      margin-top: 20px;
-      border: 2px solid #ccc;
-    }
-
-    video {
-      width: 100% !important;
-      height: auto !important;
-    }
-
     button {
       padding: 10px 20px;
-      font-size: 16px;
       margin: 10px;
+      font-size: 16px;
       cursor: pointer;
     }
 
     #trumpList {
-      margin-top: 10px;
-      font-size: 16px;
+      margin-top: 20px;
+    }
+
+    ul {
+      list-style: none;
+      padding: 0;
     }
   </style>
 </head>
 <body>
   <h1>Trump Card Scanner</h1>
-  <p>Scan a barcode using your camera</p>
-  <button onclick="newRound()">New Round</button>
-  <button onclick="showTrumpList()">Testing</button>
+  <p>Scan a barcode from your custom card set.</p>
 
+  <!-- Buttons -->
+  <div>
+    <button onclick="newRound()">🔁 New Round</button>
+    <button onclick="showTrumpList()">🧪 Testing</button>
+  </div>
+
+  <!-- Camera Feed -->
   <div id="scanner"></div>
+
+  <!-- Scan Result -->
   <div id="result"></div>
+
+  <!-- Trump Card List -->
   <div id="trumpList"></div>
 
   <script>
@@ -89,34 +101,38 @@
     }
 
     function showTrumpList() {
-      const list = selectedTrumpCards.map(card => `<li>${card.suit} ${card.rank}</li>`).join('');
-      document.getElementById('trumpList').innerHTML = `<h3>Trump Cards</h3><ul>${list}</ul>`;
+      const list = selectedTrumpCards.map(card =>
+        `<li>${card.suit} ${card.rank}</li>`
+      ).join('');
+      document.getElementById('trumpList').innerHTML =
+        `<h3>Trump Cards</h3><ul>${list}</ul>`;
     }
 
     function handleBarcode(barcode) {
       if (seenBarcodes.has(barcode)) return;
       seenBarcodes.add(barcode);
 
-      const fullMatch = cards.find(card => card.barcode === barcode);
-      const isTrump = selectedTrumpCards.some(card => card.barcode === barcode);
+      const card = cards.find(c => c.barcode === barcode);
+      const isTrump = selectedTrumpCards.some(c => c.barcode === barcode);
       const resultDiv = document.getElementById('result');
 
-      if (fullMatch) {
+      if (card) {
         resultDiv.innerHTML = `
-          <h2>${fullMatch.suit} ${fullMatch.rank}</h2>
+          <h2>${card.suit} ${card.rank}</h2>
           ${isTrump ? '<div id="trump">TRUMP</div>' : ''}
         `;
       } else {
-        resultDiv.innerHTML = `<p>Invalid barcode: ${barcode}</p>`;
+        resultDiv.innerHTML = `<p>Unknown barcode: ${barcode}</p>`;
       }
     }
 
-    // Initialize with first random set
+    // Initial round
     newRound();
 
-    // Barcode Scanner Setup
+    // Start scanner
     Quagga.init({
       inputStream: {
+        name: "Live",
         type: "LiveStream",
         target: document.querySelector('#scanner'),
         constraints: {
@@ -126,19 +142,18 @@
       decoder: {
         readers: ["code_128_reader"]
       }
-    }, function (err) {
+    }, err => {
       if (err) {
         console.error(err);
-        alert("Error initializing barcode scanner.");
+        alert("Barcode scanner init failed.");
         return;
       }
       Quagga.start();
     });
 
-    Quagga.onDetected((data) => {
-      const barcode = data.codeResult.code.trim();
-      console.log("Scanned:", barcode);
-      handleBarcode(barcode);
+    Quagga.onDetected(data => {
+      const code = data.codeResult.code.trim();
+      handleBarcode(code);
     });
   </script>
 </body>
