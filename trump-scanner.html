@@ -34,13 +34,29 @@
       width: 100% !important;
       height: auto !important;
     }
+
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      margin: 10px;
+      cursor: pointer;
+    }
+
+    #trumpList {
+      margin-top: 10px;
+      font-size: 16px;
+    }
   </style>
 </head>
 <body>
   <h1>Trump Card Scanner</h1>
   <p>Scan a barcode using your camera</p>
+  <button onclick="newRound()">New Round</button>
+  <button onclick="showTrumpList()">Testing</button>
+
   <div id="scanner"></div>
   <div id="result"></div>
+  <div id="trumpList"></div>
 
   <script>
     const suits = ["Spades", "Hearts", "Diamonds", "Clubs"];
@@ -56,15 +72,26 @@
       }
     }
 
+    let selectedTrumpCards = [];
+    let seenBarcodes = new Set();
+
     function getRandomCards(deck, count = 10) {
       const shuffled = [...deck].sort(() => 0.5 - Math.random());
       return shuffled.slice(0, count);
     }
 
-    const selectedTrumpCards = getRandomCards(cards);
-    console.log("Selected TRUMP Cards:", selectedTrumpCards.map(c => c.barcode));
+    function newRound() {
+      selectedTrumpCards = getRandomCards(cards);
+      seenBarcodes.clear();
+      document.getElementById('result').innerHTML = '';
+      document.getElementById('trumpList').innerHTML = '';
+      console.log("New Trump Cards:", selectedTrumpCards.map(c => c.barcode));
+    }
 
-    const seenBarcodes = new Set();
+    function showTrumpList() {
+      const list = selectedTrumpCards.map(card => `<li>${card.suit} ${card.rank}</li>`).join('');
+      document.getElementById('trumpList').innerHTML = `<h3>Trump Cards</h3><ul>${list}</ul>`;
+    }
 
     function handleBarcode(barcode) {
       if (seenBarcodes.has(barcode)) return;
@@ -84,12 +111,16 @@
       }
     }
 
+    // Initialize with first random set
+    newRound();
+
+    // Barcode Scanner Setup
     Quagga.init({
       inputStream: {
         type: "LiveStream",
         target: document.querySelector('#scanner'),
         constraints: {
-          facingMode: "environment" // Rear camera
+          facingMode: "environment"
         }
       },
       decoder: {
